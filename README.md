@@ -48,8 +48,7 @@ The Render service follows `render.yaml` and redeploys on every push to `main`. 
 | Player 1 (local) | W A S D | Q |
 | Player 2 (local) | Arrow keys | Space |
 | Online | WASD or arrows | Space |
-| Phone / tablet, upright | Drag on the left | JUMP button, bottom right |
-| Phone / tablet, sideways | Drag on the right | JUMP button, bottom left |
+| Phone / tablet (upright or sideways) | Drag on the right | JUMP button, bottom left |
 
 * The ring under your feet (and the ring in your card) shows when your next jump is ready.
 * **Esc** or **P** pauses a local match. Online, Esc opens "Leave the match?".

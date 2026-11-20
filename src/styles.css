@@ -151,11 +151,11 @@ h1 span { display: inline-block; margin-left: .25em; color: var(--butter); trans
 
 /* ---- Touch controls ---- */
 .touchpad { position: absolute; inset: auto 0 0 0; height: 46%; pointer-events: auto; z-index: 4; }
-.stick-zone { position: absolute; left: 0; bottom: 0; width: 62%; height: 100%; touch-action: none; }
-.stick-hint { position: absolute; left: 24px; bottom: 24px; width: 110px; height: 110px; border-radius: 50%; border: 3px dashed #ffffffaa; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: .75rem; text-align: center; text-shadow: 0 1px 2px #0006; }
+.stick-zone { position: absolute; right: 0; bottom: 0; width: 62%; height: 100%; touch-action: none; }
+.stick-hint { position: absolute; right: 24px; bottom: 24px; width: 110px; height: 110px; border-radius: 50%; border: 3px dashed #ffffffaa; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: .75rem; text-align: center; text-shadow: 0 1px 2px #0006; }
 .stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; background: #ffffff55; border: 3px solid #fff; pointer-events: none; }
 .stick i { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: #fff; box-shadow: 0 3px 0 #0003; }
-.jump-btn { position: absolute; right: 22px; bottom: 26px; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(180deg, #ffd34d, #ff9f1c); border: 4px solid var(--ink); font-weight: 900; box-shadow: 0 5px 0 var(--ink); touch-action: none; }
+.jump-btn { position: absolute; left: 22px; bottom: 26px; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(180deg, #ffd34d, #ff9f1c); border: 4px solid var(--ink); font-weight: 900; box-shadow: 0 5px 0 var(--ink); touch-action: none; }
 .jump-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 .game.local .touchpad .jump-btn { width: 80px; height: 80px; }
 
@@ -187,17 +187,14 @@ h1 span { display: inline-block; margin-left: .25em; color: var(--butter); trans
   .game.tall.local .pcard { top: 8px; }
   .game.tall.local .view:nth-child(2) .pcard { top: 34px; }
   .game.tall.local .touchpad { height: 40%; }
-  .game.tall.local .stick-hint { width: 92px; height: 92px; left: 16px; bottom: 14px; }
-  .game.tall.local .touchpad .jump-btn { width: 74px; height: 74px; right: 16px; bottom: 18px; }
+  .game.tall.local .stick-hint { width: 92px; height: 92px; right: 16px; bottom: 14px; }
+  .game.tall.local .touchpad .jump-btn { width: 74px; height: 74px; left: 16px; bottom: 18px; }
   .game.tall.local .game-actions { bottom: auto; top: 50%; left: auto; right: 8px; transform: translateY(-50%); }
   .game.tall.local .game-actions .chip { padding: 6px 10px; font-size: .8rem; }
 }
-/* Landscape (phone or tablet on its side): JUMP under the left thumb, the drag stick under the right. */
-.game.wide .stick-zone { left: auto; right: 0; }
-.game.wide .stick-hint { left: auto; right: 24px; }
-.game.wide .jump-btn { right: auto; left: 22px; }
-.game.wide .view:first-child .jump-btn, .game.wide.online .jump-btn { margin-left: var(--safe-l); }
-.game.wide .view:last-child .stick-hint { margin-right: var(--safe-r); }
+/* Touch controls, in every orientation: JUMP under the left thumb, the drag stick under the right. */
+.game .view:first-child .jump-btn, .game.online .jump-btn { margin-left: var(--safe-l); }
+.game .view:last-child .stick-hint, .game.online .stick-hint { margin-right: var(--safe-r); }
 .game.wide .opponent, .game.wide.local .view:last-child .pcard { margin-right: var(--safe-r); }
 
 /* Short landscape phones: everything a bit smaller so the floor gets the room. */
