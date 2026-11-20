@@ -1,0 +1,14 @@
+# One-click Render setup for the Crumble Clash online room server (it also serves the game itself).
+services:
+  - type: web
+    name: crumble-clash-rooms
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_VERSION
+        value: "22"
