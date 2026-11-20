@@ -137,9 +137,10 @@ try {
     check(final && final.matchWinner === 0 && final.wins[0] === 3, `an online match plays to a result (${final?.wins.join('–')})`);
     const gFinal = await until(guest, s => s.phase === 'matchOver', 3000);
     check(gFinal && gFinal.wins.join() === final?.wins.join(), 'both players see the same final score');
-    await host.getByText('ANA WINS!').waitFor({ timeout: 4000 }).catch(() => {});
-    await guest.getByText('ANA WINS!').waitFor({ timeout: 4000 }).catch(() => {});
-    check(await host.getByText('ANA WINS!').isVisible() && await guest.getByText('ANA WINS!').isVisible(), 'results screen on both sides');
+    // Online, each side reads the result from their own point of view.
+    await host.getByText('YOU WIN!').waitFor({ timeout: 4000 }).catch(() => {});
+    await guest.getByText('FRIEND WINS!').waitFor({ timeout: 4000 }).catch(() => {});
+    check(await host.getByText('YOU WIN!').isVisible() && await guest.getByText('FRIEND WINS!').isVisible(), 'results screen on both sides (YOU WIN! / FRIEND WINS!)');
     check(await host.locator('.coins-earned').isVisible(), 'coins are awarded for a completed match');
     await host.screenshot({ path: `${out}/online-results-host.png` }); await guest.screenshot({ path: `${out}/online-results-guest.png` });
     const coins = await host.evaluate(() => JSON.parse(localStorage.getItem('crumble-clash-v1') || '{}').coins);

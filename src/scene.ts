@@ -24,6 +24,26 @@ const ARENA_HALF = (() => {
 })();
 export interface Inset { top: number; bottom: number }
 
+/** Height of a name tag on screen, in CSS pixels. */
+const TAG_PIXELS = 24;
+/** A rounded label in the player's colour with a little pointer underneath, drawn on top of everything. */
+function makeTag(text: string, color: string) {
+  const scale = 3, h = 30 * scale, font = `900 ${17 * scale}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d')!;
+  ctx.font = font; const w = Math.ceil(ctx.measureText(text).width + 26 * scale);
+  canvas.width = w; canvas.height = h;
+  const body = h - 7 * scale, r = body / 2;
+  ctx.fillStyle = color; ctx.strokeStyle = '#1c1f33'; ctx.lineWidth = 2.5 * scale;
+  ctx.beginPath(); ctx.roundRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, body - ctx.lineWidth, r); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w / 2 - 6 * scale, body - ctx.lineWidth); ctx.lineTo(w / 2, h - 1); ctx.lineTo(w / 2 + 6 * scale, body - ctx.lineWidth); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = color; ctx.fillRect(w / 2 - 5 * scale, body - ctx.lineWidth * 1.6, 10 * scale, ctx.lineWidth * 1.2);
+  ctx.font = font; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, w / 2, body / 2 + scale);
+  const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 4;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map, depthTest: false, depthWrite: false, transparent: true }));
+  sprite.renderOrder = 10; sprite.center.set(.5, 0);
+  return sprite;
+}
+
 export interface ViewSpec { seat: number }
 
 /** A hexagonal prism whose top sits at y = 0, coloured lighter on top and darker on the sides so edges read. */
@@ -61,6 +81,7 @@ export class ArenaScene {
   private crackMeshes: THREE.InstancedMesh[] = []; private crackMats: THREE.MeshBasicMaterial[] = [];
   private characters: Character[] = []; private shadows: THREE.Mesh[] = []; private markers: THREE.Mesh[] = []; private cooldowns: THREE.Mesh[] = [];
   private pickupMeshes = new Map<number, THREE.Group>();
+  private tags: { you: THREE.Sprite; friend: THREE.Sprite }[] = [];
   private debris: Debris[] = []; private trails: TrailDot[] = []; private trailTimers = [0, 0];
   private disposables: { dispose(): void }[] = [];
   private dummy = new THREE.Object3D(); private crackDummy = new THREE.Object3D(); private color = new THREE.Color(); private base: THREE.Color[] = [];
@@ -112,6 +133,10 @@ export class ArenaScene {
       const trailMat = trail ? new THREE.MeshBasicMaterial({ color: trail, transparent: true, opacity: .85 }) : null;
       if (trailMat) this.disposables.push(trailMat);
       this.trailMats.push(trailMat);
+      // Name tags floating above the head: "YOU" in your own view, "FRIEND" over the other player.
+      const you = makeTag('YOU', SEAT_COLORS[seat]), friend = makeTag('FRIEND', SEAT_COLORS[seat]);
+      this.scene.add(you, friend); this.tags.push({ you, friend });
+      this.disposables.push(you.material, you.material.map!, friend.material, friend.material.map!);
     });
     this.addBackdrop();
 
@@ -250,6 +275,18 @@ export class ArenaScene {
       // Move the picture down (or up) so the floor's centre lands in the middle of the clear band.
       if (Math.abs(fr.shift) > 1) cam.setViewOffset(vp.w, vp.h, 0, -fr.shift, vp.w, vp.h); else cam.clearViewOffset();
       cam.updateProjectionMatrix();
+      // Tags: keep them the same size on screen however far the camera has pulled back.
+      const tagHeight = TAG_PIXELS * 2 * fr.dist * Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2)) / vp.h;
+      this.tags.forEach((t, s) => {
+        const q = players[s], show = !!q && q.alive;
+        t.you.visible = show && s === seat; t.friend.visible = show && s !== seat;
+        for (const sprite of [t.you, t.friend]) {
+          if (!q) continue;
+          const aspect = (sprite.material.map!.image as HTMLCanvasElement).width / (sprite.material.map!.image as HTMLCanvasElement).height;
+          sprite.scale.set(tagHeight * aspect, tagHeight, 1);
+          sprite.position.set(q.x, q.y + 1.2, q.z);
+        }
+      });
       const viewerY = p ? (p.grounded ? floorY(p.floor) : p.y) : floorY(0);
       for (let f = 0; f < ARENA.floors; f++) {
         const above = viewerY < floorY(f) - .6, mat = this.floorMats[f];

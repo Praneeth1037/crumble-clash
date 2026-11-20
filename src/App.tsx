@@ -112,11 +112,12 @@ function Online({ net, sound, profile, touch, onExit, onMatchOver }: { net: Net;
     {net.status === 'closed' && <p>{ROOM_SERVER ? 'The online server is not answering right now. Try again in a minute, or play Local in the meantime.' : <>Online rooms need the Crumble Clash server running (<code>npm run dev</code>).</>}</p>}
     <button className="ghost" onClick={onExit}>Cancel</button></div></div>;
 
-  const names = room.seats.map((s, i) => s?.name || `Player ${i + 1}`) as [string, string];
+  // In the match itself it's simply you and your friend.
+  const matchNames = [0, 1].map(i => i === seat ? 'You' : 'Friend') as [string, string];
   const looks = room.seats.map((s, i) => s?.look || profile.looks[i]) as [Look, Look];
   if (room.status !== 'lobby') {
     return <>
-      <Game mode="online" net={net} seat={seat} room={room} looks={looks} names={names} ruleset={room.ruleset} sound={sound} reduced={profile.reducedMotion} touch={touch} onExit={onExit} onMatchOver={onMatchOver} />
+      <Game mode="online" net={net} seat={seat} room={room} looks={looks} names={matchNames} ruleset={room.ruleset} sound={sound} reduced={profile.reducedMotion} touch={touch} onExit={onExit} onMatchOver={onMatchOver} />
       {net.status === 'reconnecting' && <div className="net-banner">Connection lost — reconnecting…</div>}
     </>;
   }

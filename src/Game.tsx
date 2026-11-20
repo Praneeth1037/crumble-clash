@@ -70,7 +70,7 @@ export function Game(props: GameProps) {
             const who = e.winner === null ? null : nameOf(e.winner);
             sound.play(e.winner === null ? 'draw' : 'roundWin');
             setBanner(e.winner === null ? { text: 'DRAW', sub: 'Both fell together — no point', until: now + MATCH.roundOverSeconds * 1000, tone: 'draw' }
-              : { text: `${who} WINS THE ROUND`, sub: `${e.wins[0]} – ${e.wins[1]}`, until: now + MATCH.roundOverSeconds * 1000, tone: 'win' });
+              : { text: `${wins(who!)} THE ROUND`, sub: `${e.wins[0]} – ${e.wins[1]}`, until: now + MATCH.roundOverSeconds * 1000, tone: 'win' });
             break;
           }
           case 'match-over': {
@@ -186,7 +186,7 @@ export function Game(props: GameProps) {
       {results && !(online && room?.ended) && (
         <div className="overlay"><div className="panel results">
           <span className="eyebrow">MATCH OVER</span>
-          <h2 style={{ color: SEAT_COLORS[hud.matchWinner ?? 0] }}>{(names[hud.matchWinner ?? 0] || 'Player').toUpperCase()} WINS!</h2>
+          <h2 style={{ color: SEAT_COLORS[hud.matchWinner ?? 0] }}>{wins((names[hud.matchWinner ?? 0] || 'Player').toUpperCase())}!</h2>
           <div className="final-score"><span style={{ color: SEAT_COLORS[0] }}>{names[0]}</span><b>{hud.wins[0]} – {hud.wins[1]}</b><span style={{ color: SEAT_COLORS[1] }}>{names[1]}</span></div>
           {hud.draws > 0 && <p className="muted">{hud.draws} drawn round{hud.draws > 1 ? 's' : ''}</p>}
           {coins !== null && <p className="coins-earned">+{coins} coins</p>}
@@ -220,6 +220,9 @@ function measureInsets(box: HTMLElement): Inset[] {
     return { top, bottom };
   });
 }
+
+/** "YOU WIN" but "FRIEND WINS". */
+const wins = (name: string) => name === 'YOU' ? 'YOU WIN' : `${name} WINS`;
 
 /** Online: draw slightly in the past and blend between the two snapshots around that moment. */
 function interpolate(buffer: { snap: Snapshot; at: number }[], now: number) {
