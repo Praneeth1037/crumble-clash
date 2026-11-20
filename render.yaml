@@ -1,7 +1,7 @@
 # One-click Render setup for the Crumble Clash online room server (it also serves the game itself).
 services:
   - type: web
-    name: crumble-clash-rooms
+    name: crumble-clash
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build

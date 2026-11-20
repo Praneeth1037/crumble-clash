@@ -28,6 +28,19 @@ npm test             # simulation and room-server tests (vitest)
 npm run test:browser # end-to-end in installed Chrome: local, touch, and a full two-browser online match
 ```
 
+## Live
+
+* **Play:** https://crumble-clash.vercel.app (Vercel serves the game page)
+* **Room server:** https://crumble-clash.onrender.com (Render runs the online rooms; it also serves the game itself)
+
+Vercel can't keep WebSockets open, so the page is built with `VITE_ROOM_SERVER` pointing at the Render server:
+
+```bash
+vercel deploy --prod --build-env VITE_ROOM_SERVER=https://crumble-clash.onrender.com
+```
+
+The Render service follows `render.yaml` and redeploys on every push to `main`. On the free plan it sleeps after about 15 idle minutes. The page wakes it as soon as someone opens the site, and shows "Waking up the online server…" until it answers (up to a minute).
+
 ## Controls
 
 | | Move | Jump |
@@ -35,7 +48,8 @@ npm run test:browser # end-to-end in installed Chrome: local, touch, and a full 
 | Player 1 (local) | W A S D | Q |
 | Player 2 (local) | Arrow keys | Space |
 | Online | WASD or arrows | Space |
-| Phone / tablet | Drag the on-screen thumbstick | JUMP button |
+| Phone / tablet, upright | Drag on the left | JUMP button, bottom right |
+| Phone / tablet, sideways | Drag on the right | JUMP button, bottom left |
 
 * The ring under your feet (and the ring in your card) shows when your next jump is ready.
 * **Esc** or **P** pauses a local match. Online, Esc opens "Leave the match?".
