@@ -159,10 +159,64 @@ h1 span { display: inline-block; margin-left: .25em; color: var(--butter); trans
 .jump-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 .game.local .touchpad .jump-btn { width: 80px; height: 80px; }
 
+.round span, .round small, .round b { white-space: nowrap; }
+
+/* iPhone notch and home bar: keep the HUD inside the safe area. */
+.game { --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); }
+.game .view:first-child .pcard, .game.online .scoreboard, .game.wide .scoreboard { margin-top: var(--safe-t); }
+.game .pcard { margin-left: var(--safe-l); }
+.game-actions { margin-bottom: var(--safe-b); }
+.game .view:last-child .touchpad { padding-bottom: var(--safe-b); }
+.game .view:last-child .stick-hint, .game .view:last-child .jump-btn { margin-bottom: var(--safe-b); }
+
+/* Phones and other narrow screens: a compact HUD that never covers the controls or itself. */
 @media (max-width: 640px) {
-  .pcard { min-width: 0; padding: 6px 8px; } .pcard .keys { display: none; }
-  .scoreboard { padding: 4px 10px; } .round b { font-size: 1.1rem; }
-  .game.online .opponent { top: auto; bottom: 64px; right: 8px; }
-  .game.online .scoreboard { top: 70px; }
+  .pcard { min-width: 0; padding: 6px 10px; gap: 2px; border-radius: 12px; } .pcard .keys, .pname small { display: none; }
+  .pname b { font-size: .95rem; } .floor-label { font-size: .8rem; min-width: 70px; } .jump-ring { width: 28px; height: 28px; }
+  .powers { font-size: .7rem; gap: 4px; }
+  .scoreboard { padding: 4px 12px; gap: 8px; border-radius: 14px; }
+  .round b { font-size: 1.15rem; } .round span { font-size: .62rem; } .round small { font-size: .56rem; }
+  .pips { gap: 3px; } .pips i { width: 11px; height: 11px; border-width: 2.5px; }
+
+  /* Online, upright phone: score across the top, your card and your friend's card side by side beneath it. */
+  .game.online .scoreboard { top: 8px; }
+  .game.online .pcard { top: 70px; left: 8px; max-width: calc(50% - 12px); }
+  .game.online .opponent { top: 70px; right: 8px; bottom: auto; flex-wrap: wrap; justify-content: flex-end; max-width: calc(50% - 12px); padding: 6px 10px; border-radius: 12px; margin-top: var(--safe-t); font-size: .8rem; }
+
+  /* Local, one phone split top and bottom: score sits on the divider, each card tucked into its own half. */
+  .game.tall.local .pcard { top: 8px; }
+  .game.tall.local .view:nth-child(2) .pcard { top: 34px; }
+  .game.tall.local .touchpad { height: 40%; }
+  .game.tall.local .stick-hint { width: 92px; height: 92px; left: 16px; bottom: 14px; }
+  .game.tall.local .touchpad .jump-btn { width: 74px; height: 74px; right: 16px; bottom: 18px; }
+  .game.tall.local .game-actions { bottom: auto; top: 50%; left: auto; right: 8px; transform: translateY(-50%); }
+  .game.tall.local .game-actions .chip { padding: 6px 10px; font-size: .8rem; }
 }
+/* Landscape (phone or tablet on its side): JUMP under the left thumb, the drag stick under the right. */
+.game.wide .stick-zone { left: auto; right: 0; }
+.game.wide .stick-hint { left: auto; right: 24px; }
+.game.wide .jump-btn { right: auto; left: 22px; }
+.game.wide .view:first-child .jump-btn, .game.wide.online .jump-btn { margin-left: var(--safe-l); }
+.game.wide .view:last-child .stick-hint { margin-right: var(--safe-r); }
+.game.wide .opponent, .game.wide.local .view:last-child .pcard { margin-right: var(--safe-r); }
+
+/* Short landscape phones: everything a bit smaller so the floor gets the room. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .pcard { min-width: 0; padding: 5px 10px; gap: 2px; border-radius: 12px; top: 8px; } .pcard .keys, .pname small { display: none; }
+  .pname b { font-size: .9rem; } .floor-label { font-size: .78rem; min-width: 66px; } .jump-ring { width: 26px; height: 26px; }
+  .powers { font-size: .68rem; gap: 4px; }
+  .scoreboard { top: 6px; padding: 3px 12px; gap: 8px; border-radius: 14px; }
+  .round b { font-size: 1.05rem; } .round span { font-size: .58rem; } .round small { font-size: .52rem; }
+  .pips { gap: 3px; } .pips i { width: 10px; height: 10px; border-width: 2.5px; }
+  .opponent { top: 8px; padding: 5px 10px; border-radius: 12px; font-size: .78rem; }
+  .touchpad { height: 55%; }
+  .stick-hint { width: 90px; height: 90px; bottom: 16px; }
+  .jump-btn, .game.local .touchpad .jump-btn { width: 78px; height: 78px; bottom: 16px; }
+  .game-actions { bottom: 8px; } .game-actions .chip { padding: 5px 10px; font-size: .78rem; }
+  .countdown { font-size: min(22vh, 160px); }
+  .banner { top: 30%; padding: 8px 16px; } .banner b { font-size: 1.3rem; }
+  /* Split screen side by side: the drag sticks meet in the middle, so Pause goes up under the score. */
+  .game.local .game-actions { bottom: auto; top: 58px; }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

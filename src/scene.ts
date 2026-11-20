@@ -15,6 +15,14 @@ const FLOOR_COLORS = ['#8be9c7', '#a9b8ff', '#ffd47a'];
 const CRACK_COLOR = new THREE.Color('#ff5a36');
 const WARN_COLOR = new THREE.Color('#ffe14d');
 const CAMERA_OFFSET = new THREE.Vector3(0, 9.6, 9.4);
+const CAMERA_FOV = 48;
+/** Half the size of one floor in world units (x across, z deep), edge tiles included. */
+const ARENA_HALF = (() => {
+  let x = 0, z = 0;
+  for (const h of HEX_LIST) { const w = hexToWorld(h.q, h.r); x = Math.max(x, Math.abs(w.x)); z = Math.max(z, Math.abs(w.z)); }
+  return { x: x + ARENA.tileSize * .9, z: z + ARENA.tileSize };
+})();
+export interface Inset { top: number; bottom: number }
 
 export interface ViewSpec { seat: number }
 
@@ -108,7 +116,7 @@ export class ArenaScene {
     this.addBackdrop();
 
     for (const v of views) {
-      const cam = new THREE.PerspectiveCamera(48, 1, .1, 200);
+      const cam = new THREE.PerspectiveCamera(CAMERA_FOV, 1, .1, 260);
       void v; this.cameras.push(cam); this.camTargets.push(new THREE.Vector3(0, floorY(0), 0));
     }
   }
@@ -119,8 +127,8 @@ export class ArenaScene {
     this.disposables.push(cloudMat, puff);
     const rand = mulberry(7);
     for (let i = 0; i < 16; i++) {
-      const cloud = new THREE.Group(), angle = i / 16 * Math.PI * 2 + rand() * .3, dist = 24 + rand() * 18;
-      cloud.position.set(Math.cos(angle) * dist, -14 - rand() * 10, Math.sin(angle) * dist - 6);
+      const cloud = new THREE.Group(), angle = i / 16 * Math.PI * 2 + rand() * .3, dist = 40 + rand() * 22;
+      cloud.position.set(Math.cos(angle) * dist, -24 - rand() * 12, Math.sin(angle) * dist - 10);
       for (let k = 0; k < 5; k++) { const m = new THREE.Mesh(puff, cloudMat); m.position.set((k - 2) * 1.6 + rand(), rand() * .8, rand() * 1.2); m.scale.setScalar(1.4 + rand() * 1.4); cloud.add(m); }
       this.scene.add(cloud);
     }
@@ -135,6 +143,33 @@ export class ArenaScene {
     this.width = Math.max(1, width); this.height = Math.max(1, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(this.width, this.height, false);
+  }
+
+  /** Space (CSS px) the HUD covers at the top and bottom of each view, so tall views can frame the floor between them. */
+  private insets: Inset[] = [];
+  setInsets(insets: Inset[]) { this.insets = insets; }
+
+  /**
+   * Camera framing for one view: pull back until the whole floor fits the view's width and sits in the clear band
+   * between the HUD at the top and the thumb controls at the bottom, so you can always read the whole structure.
+   * Works the same for a phone held upright, one half of split screen, or a desktop window.
+   */
+  private frame(vp: { w: number; h: number }, k: number) {
+    const tan = Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2)), baseDist = CAMERA_OFFSET.length();
+    const inset = this.insets[k] ?? { top: 0, bottom: 0 };
+    const top = Math.min(inset.top, vp.h * .35), bottom = Math.min(inset.bottom, vp.h * .4), band = Math.max(80, vp.h - top - bottom);
+    const pitch = Math.atan2(CAMERA_OFFSET.y, CAMERA_OFFSET.z);
+    // Pixels per world unit at the followed point: the floor's full width must fit, and its tilted depth must fit the band.
+    const ppuWidth = vp.w * .5 * .96 / ARENA_HALF.x, ppuBand = band * .5 / (ARENA_HALF.z * Math.sin(pitch) + .9);
+    const ppuBase = vp.h * .5 / (baseDist * tan), ppu = Math.min(ppuBase, ppuWidth, ppuBand);
+    // Never pull back so far that the characters become specks; past that the camera follows within what's left.
+    const dist = Math.min(baseDist * 3.2, vp.h * .5 / (ppu * tan));
+    const real = vp.h * .5 / (dist * tan); // what we actually got after the cap
+    const seeX = vp.w * .5 / real, seeZ = band * .5 / real / Math.sin(pitch);
+    return {
+      dist, shift: top + band / 2 - vp.h / 2,
+      slackX: Math.max(0, Math.min(7.5, ARENA_HALF.x - seeX * .92)), slackZ: Math.max(0, Math.min(7, ARENA_HALF.z - seeZ * .9)),
+    };
   }
 
   /** Screen rectangles for each view: side by side on wide screens, stacked on tall ones. */
@@ -203,13 +238,18 @@ export class ArenaScene {
     r.setScissorTest(ports.length > 1);
     ports.forEach((vp, k) => {
       const seat = this.views[k].seat, p = players[seat], cam = this.cameras[k], target = this.camTargets[k];
+      const fr = this.frame(vp, k);
       if (p) {
         const focusY = p.grounded ? floorY(p.floor) : Math.min(floorY(0), Math.max(floorY(ARENA.floors - 1) - 2, p.y));
-        const goal = new THREE.Vector3(clampTo(p.x, 7.5), focusY, clampTo(p.z, 7));
+        const goal = new THREE.Vector3(clampTo(p.x, fr.slackX), focusY, clampTo(p.z, fr.slackZ));
         target.lerp(goal, 1 - Math.exp(-dt * (p.alive ? 7 : 2)));
       }
-      cam.position.copy(target).add(CAMERA_OFFSET); cam.lookAt(target.x, target.y + .4, target.z - 1.2);
-      cam.aspect = vp.w / vp.h; cam.updateProjectionMatrix();
+      const scale = fr.dist / CAMERA_OFFSET.length();
+      cam.position.copy(target).addScaledVector(CAMERA_OFFSET, scale); cam.lookAt(target.x, target.y + .4 / scale, target.z - 1.2 / scale);
+      cam.aspect = vp.w / vp.h;
+      // Move the picture down (or up) so the floor's centre lands in the middle of the clear band.
+      if (Math.abs(fr.shift) > 1) cam.setViewOffset(vp.w, vp.h, 0, -fr.shift, vp.w, vp.h); else cam.clearViewOffset();
+      cam.updateProjectionMatrix();
       const viewerY = p ? (p.grounded ? floorY(p.floor) : p.y) : floorY(0);
       for (let f = 0; f < ARENA.floors; f++) {
         const above = viewerY < floorY(f) - .6, mat = this.floorMats[f];

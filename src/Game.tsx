@@ -5,7 +5,7 @@ import { AVATARS, coinsFor, type Look } from '../shared/rewards';
 import { Match, type GameEvent, type PlayerView, type Snapshot } from '../shared/sim';
 import { Controller, Keyboard, LOCAL_BINDINGS, ONLINE_BINDING } from './input';
 import type { Net } from './net';
-import { ArenaScene, SEAT_COLORS } from './scene';
+import { ArenaScene, SEAT_COLORS, type Inset } from './scene';
 import type { Sound } from './sound';
 
 export interface GameProps {
@@ -46,7 +46,7 @@ export function Game(props: GameProps) {
     window.addEventListener('resize', fit);
 
     const match = mode === 'local' ? new Match({ ruleset }) : null; matchRef.current = match;
-    let latest: Snapshot | null = match?.snapshot() ?? null, hudAt = 0, raf = 0, last = performance.now(), carry = 0, inputAt = 0, awarded = -1, matchCount = 0;
+    let latest: Snapshot | null = match?.snapshot() ?? null, hudAt = 0, raf = 0, last = performance.now(), carry = 0, inputAt = 0, insetAt = 0, awarded = -1, matchCount = 0;
     window.__crumble = { snapshot: () => latest, seat, mode };
 
     const onEvents = (events: GameEvent[]) => {
@@ -113,6 +113,7 @@ export function Game(props: GameProps) {
       }
       if (latest) scene.render(latest, players.length ? players : latest.players, dt);
       if (nowMs - hudAt > 80 && latest) { hudAt = nowMs; setHud(latest); }
+      if (nowMs - insetAt > 400) { insetAt = nowMs; scene.setInsets(measureInsets(box)); }
     };
     raf = requestAnimationFrame(frame);
 
@@ -196,6 +197,28 @@ export function Game(props: GameProps) {
       )}
     </div>
   );
+}
+
+/**
+ * How much of each view the HUD covers: cards and the score near the top, thumb controls and buttons near the bottom.
+ * The scene uses this to frame the floor in the clear space between them on tall screens.
+ */
+const HUD_PARTS = '.pcard, .scoreboard, .opponent, .game-actions .chip, .jump-btn';
+function measureInsets(box: HTMLElement): Inset[] {
+  const parts = [...box.querySelectorAll<HTMLElement>(HUD_PARTS)].map(el => {
+    const r = el.getBoundingClientRect();
+    // The jump button sits in a bottom corner where the hexagonal floor is already narrow, so only half of it counts.
+    return el.classList.contains('jump-btn') ? new DOMRect(r.left, r.top + r.height / 2, r.width, r.height / 2) : r;
+  }).filter(r => r.width && r.height);
+  return [...box.querySelectorAll<HTMLElement>('.view')].map(view => {
+    const v = view.getBoundingClientRect(); let top = 0, bottom = 0;
+    for (const r of parts) {
+      if (r.right <= v.left || r.left >= v.right || r.bottom <= v.top || r.top >= v.bottom) continue;
+      if ((r.top + r.bottom) / 2 < v.top + v.height / 2) top = Math.max(top, r.bottom - v.top + 6);
+      else bottom = Math.max(bottom, v.bottom - r.top + 6);
+    }
+    return { top, bottom };
+  });
 }
 
 /** Online: draw slightly in the past and blend between the two snapshots around that moment. */

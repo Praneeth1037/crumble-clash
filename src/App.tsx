@@ -56,7 +56,7 @@ export function App() {
               </button>
             ))}
           </div>
-          <button className="primary big" onClick={() => { click(); setScreen('local'); }}>Play Local <span>2 players · one keyboard</span></button>
+          <button className="primary big" onClick={() => { click(); setScreen('local'); }}>Play Local <span>2 players · {touch ? 'one screen' : 'one keyboard'}</span></button>
           <button className="secondary" onClick={host}>Create Private Room</button>
           <form className="join" onSubmit={e => { e.preventDefault(); if (ROOM_CODE.test(joinCode.toUpperCase())) join(); }}>
             <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} placeholder="CODE" aria-label="Room code" autoCapitalize="characters" autoComplete="off" />
